@@ -8,9 +8,10 @@ from totpy_auth.key_derivation import KeyDerivation
 
 
 class Client:
-    def __init__(self):
+    def __init__(self, server):
         self.username = input("Enter username: ")
         self.password = getpass.getpass("Enter password: ")
+        self.server = server
         self.token = None
         self.totp_secret = None
         self.session_key = None
@@ -21,13 +22,13 @@ class Client:
         key_derivation = KeyDerivation()
         self.token = key_derivation.derive_pbkdf2_key(self.password)
 
-    def send_authentication_info(self, server):
+    def send_authentication_info(self):
         # Envia nome do usuário, token e horário para o servidor
-        token_valid = server.receive_authentication_info(self.username, self.token)
+        token_valid = self.server.receive_authentication_info(self.username, self.token)
         return token_valid
 
-    def auth_totp_secret(self, server):
-        totp_secret = server.generate_totp_secret(self.username)
+    def auth_totp_secret(self):
+        totp_secret = self.server.generate_totp_secret(self.username)
         # Recebe o segredo TOTP do servidor
         self.totp_secret = totp_secret
 
@@ -36,18 +37,18 @@ class Client:
         totp = pyotp.TOTP(self.totp_secret)
         return totp.now()
 
-    def send_totp_code(self, server):
+    def send_totp_code(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
-        totp_code_valid = server.receive_totp_code(self.username, totp_code)
+        totp_code_valid = self.server.receive_totp_code(self.username, totp_code)
         return totp_code_valid
 
-    def establish_session_key(self, server):
+    def establish_session_key(self):
         # Deriva uma chave simétrica de sessão usando PBKDF2
         combined_code = self.token + self.totp_secret
         key_derivation = KeyDerivation()
         self.session_key = key_derivation.derive_pbkdf2_key(combined_code)
-        server.receive_session_key(self.session_key)
+        self.server.receive_session_key(self.session_key)
 
     def encrypt_message(self, message):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
