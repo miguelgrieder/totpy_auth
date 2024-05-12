@@ -29,7 +29,7 @@ class Client:
             backend=default_backend(),
         )
         if isinstance(password, str) and not isinstance(password, bytes):
-            password = password.encode()
+            password = password.encode("utf-8")
         key = kdf.derive(password)
         return key
 
