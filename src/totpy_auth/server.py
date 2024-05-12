@@ -59,7 +59,7 @@ class Server:
             full_encrypted_message = iv + encryptor.tag + encrypted_message
             print("Encrypted message sent to client:", encrypted_message)
             decrypted_message = client.receive_and_decrypt_message(full_encrypted_message)
-            print("Decrypted message received from client:", decrypted_message.decode())
+            print("Decrypted message received from client:", decrypted_message.decode(), end="\n\n")
             return True
         else:
             return False

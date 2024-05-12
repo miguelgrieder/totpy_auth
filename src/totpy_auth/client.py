@@ -10,8 +10,8 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 class Client:
     def __init__(self, server):
-        self.username = input("Enter username: ")
-        self.password = getpass.getpass("Enter password: ")
+        self.username = input("Enter client username: ")
+        self.password = getpass.getpass("Enter client password: ")
         self.server = server
         self.token = None
         self.totp_secret = None
@@ -75,7 +75,7 @@ class Client:
         decrypted_message = self.server.receive_encrypted_message(
             self.username, full_encrypted_message
         )
-        print("Decrypted message received from server:", decrypted_message.decode())
+        print("Decrypted message received from server:", decrypted_message.decode(), end="\n\n")
         return True
 
     def receive_and_decrypt_message(self, encrypted_message):
