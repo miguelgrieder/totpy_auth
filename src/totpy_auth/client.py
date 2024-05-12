@@ -3,15 +3,15 @@ import os
 
 import pyotp
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 class Client:
     def __init__(self, server):
-        self.username = input("Enter client username: ")
-        self.password = getpass.getpass("Enter client password: ")
+        self.username = input("Client: Enter client username: ")
+        self.password = getpass.getpass("Client: Enter client password: ")
         self.server = server
         self.token = None
         self.totp_secret = None
@@ -37,13 +37,13 @@ class Client:
         # Deriva token de autenticação usando PBKDF2
         self.token = self.derive_pbkdf2_key(self.password)
 
-    def send_authentication_info(self):
+    def register_in_server(self):
         # Envia nome do usuário, token e horário para o servidor
-        token_valid = self.server.receive_authentication_info(self.username, self.token)
+        token_valid = self.server.register_client_authentication(self.username, self.token)
         return token_valid
 
-    def auth_totp_secret(self):
-        totp_secret = self.server.generate_totp_secret(self.username)
+    def generate_totp_secret_in_server_and_register(self):
+        totp_secret = self.server.register_client_totp_secret(self.username)
         # Recebe o segredo TOTP do servidor
         self.totp_secret = totp_secret
 
@@ -64,19 +64,19 @@ class Client:
         self.session_key = self.derive_pbkdf2_key(combined_code)
         self.server.receive_session_key(self.username, self.session_key)
 
-    def send_message_with_encryption(self, message):
+    def send_encrypted_message_to_server(self):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
+        message_to_server = input("Enter message to send to server: ").encode()
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(self.session_key), modes.GCM(iv))
         encryptor = cipher.encryptor()
-        encrypted_message = encryptor.update(message) + encryptor.finalize()
+        encrypted_message = encryptor.update(message_to_server) + encryptor.finalize()
         full_encrypted_message = iv + encryptor.tag + encrypted_message
-        print("Encrypted message sent to server:", full_encrypted_message)
-        decrypted_message = self.server.receive_encrypted_message(
+        print("Client: Encrypted message sent to server:", full_encrypted_message)
+        success_decrypt_by_server = self.server.receive_encrypted_message(
             self.username, full_encrypted_message
         )
-        print("Decrypted message received from server:", decrypted_message.decode(), end="\n\n")
-        return True
+        return success_decrypt_by_server
 
     def receive_and_decrypt_message(self, encrypted_message):
         # Decifra a mensagem usando a chave simétrica de sessão e o modo GCM
@@ -86,4 +86,8 @@ class Client:
         cipher = Cipher(algorithms.AES(self.session_key), modes.GCM(iv, tag))
         decryptor = cipher.decryptor()
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
+        print(
+            f"Client: Message received from server decrypted: {decrypted_message.decode()}",
+            end="\n\n",
+        )
         return decrypted_message

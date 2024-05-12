@@ -5,10 +5,10 @@ from totpy_auth.server import Server
 def main():
     server = Server()
     client = Client(server)
-    token_valid = client.send_authentication_info()
+    token_valid = client.register_in_server()
 
     if token_valid:
-        client.auth_totp_secret()
+        client.generate_totp_secret_in_server_and_register()
         totp_code_valid = client.send_totp_code()
 
         if totp_code_valid:
@@ -17,17 +17,15 @@ def main():
             while True:
                 client.establish_session_key()
 
-                message_to_server = input("Enter message to send to server: ").encode()
-                encrypted_message = client.send_message_with_encryption(message_to_server)
+                client.send_encrypted_message_to_server()
 
-                message_to_client = input("Enter message to send to client: ").encode()
-                encrypted_message = server.send_message_with_encryption(message_to_client, client)
+                server.send_encrypted_message_to_client(client)
 
                 print("-- Chat session completed, starting a new one. --", end="\n\n")
         else:
-            print("Invalid TOTP code")
+            print("App: Invalid TOTP code")
     else:
-        print("Invalid authentication token")
+        print("App: Invalid authentication token")
 
 
 if __name__ == "__main__":
