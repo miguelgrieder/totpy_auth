@@ -2,9 +2,10 @@ import getpass
 import os
 
 import pyotp
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-from totpy_auth.key_derivation import KeyDerivation
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 class Client:
@@ -15,12 +16,26 @@ class Client:
         self.token = None
         self.totp_secret = None
         self.session_key = None
+        self.__salt = os.urandom(16)  # Gera um salt aleatório
+
         self.derive_authentication_token()
+
+    def derive_pbkdf2_key(self, password, iterations=100):
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=self.__salt,
+            iterations=iterations,
+            backend=default_backend(),
+        )
+        if isinstance(password, str) and not isinstance(password, bytes):
+            password = password.encode()
+        key = kdf.derive(password)
+        return key
 
     def derive_authentication_token(self):
         # Deriva token de autenticação usando PBKDF2
-        key_derivation = KeyDerivation()
-        self.token = key_derivation.derive_pbkdf2_key(self.password)
+        self.token = self.derive_pbkdf2_key(self.password)
 
     def send_authentication_info(self):
         # Envia nome do usuário, token e horário para o servidor
@@ -46,8 +61,7 @@ class Client:
     def establish_session_key(self):
         # Deriva uma chave simétrica de sessão usando PBKDF2
         combined_code = self.token + self.totp_secret.encode("utf-8")
-        key_derivation = KeyDerivation()
-        self.session_key = key_derivation.derive_pbkdf2_key(combined_code)
+        self.session_key = self.derive_pbkdf2_key(combined_code)
         self.server.receive_session_key(self.username, self.session_key)
 
     def send_message_with_encryption(self, message):
