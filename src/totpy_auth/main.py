@@ -26,7 +26,3 @@ def main():
             print("App: Invalid TOTP code")
     else:
         print("App: Invalid authentication token")
-
-
-if __name__ == "__main__":
-    main()
