@@ -13,6 +13,8 @@ class Server:
     def receive_authentication_info(self, username, token):
         # Armazena o token de autenticação do usuário
         self.users[username] = token
+        token_valid = self.compare_authentication_token(username, token)
+        return token_valid
 
     def compare_authentication_token(self, username, token):
         # Compara o token de autenticação recebido com o armazenado
@@ -21,6 +23,7 @@ class Server:
     def generate_totp_secret(self, username):
         # Gera e armazena o segredo TOTP para o usuário
         self.totp_secrets[username] = pyotp.random_base32()
+        return self.totp_secrets[username]
 
     def receive_totp_code(self, username, totp_code):
         # Valida o código TOTP recebido

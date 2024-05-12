@@ -7,22 +7,15 @@ def main():
     client = Client()
     server = Server()
 
-    # Passo 2: Cliente - PBKDF2 – deriva token de autenticação
-    client.derive_authentication_token()
-
     # Passo 3: Cliente - envia nome do usuário, token e horário para servidor
-    client.send_authentication_info(server)
-
     # Passo 4: Servidor - Token de autenticação é derivado de novo com Scrypt, compara com valor guardado no arquivo e valida
-    token_valid = server.compare_authentication_token(client.username, client.token)
+
+    token_valid = client.send_authentication_info(server)
 
     if token_valid:
         # Passo 5: Servidor – gera código TOTP e envia o QR Code para o cliente (2º fator de autenticação, simulando a necessidade de um celular)
-        server.generate_totp_secret(client.username)
-        totp_secret = server.totp_secrets[client.username]
-
         # Passo 8: Servidor - O cliente lê o QR Code e digita o código obtido na tela para enviar para o servidor
-        client.receive_totp_secret(totp_secret)
+        client.auth_totp_secret(server)
 
         # Passo 9: Cliente - O cliente lê o QR Code e digita o código obtido na tela para enviar para o servidor
         totp_code_valid = client.send_totp_code(server)

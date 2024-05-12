@@ -3,6 +3,7 @@ import os
 
 import pyotp
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
 from totpy_auth.key_derivation import KeyDerivation
 
 
@@ -13,6 +14,7 @@ class Client:
         self.token = None
         self.totp_secret = None
         self.session_key = None
+        self.derive_authentication_token()
 
     def derive_authentication_token(self):
         # Deriva token de autenticação usando PBKDF2
@@ -21,9 +23,11 @@ class Client:
 
     def send_authentication_info(self, server):
         # Envia nome do usuário, token e horário para o servidor
-        server.receive_authentication_info(self.username, self.token)
+        token_valid = server.receive_authentication_info(self.username, self.token)
+        return token_valid
 
-    def receive_totp_secret(self, totp_secret):
+    def auth_totp_secret(self, server):
+        totp_secret = server.generate_totp_secret(self.username)
         # Recebe o segredo TOTP do servidor
         self.totp_secret = totp_secret
 
@@ -35,7 +39,8 @@ class Client:
     def send_totp_code(self, server):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
-        server.receive_totp_code(self.username, totp_code)
+        totp_code_valid = server.receive_totp_code(self.username, totp_code)
+        return totp_code_valid
 
     def establish_session_key(self, server):
         # Deriva uma chave simétrica de sessão usando PBKDF2
