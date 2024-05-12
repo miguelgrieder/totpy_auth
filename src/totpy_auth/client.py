@@ -66,7 +66,7 @@ class Client:
 
     def send_encrypted_message_to_server(self):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
-        message_to_server = input("Enter message to send to server: ").encode()
+        message_to_server = input("Client: Enter message to send to server: ").encode()
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(self.session_key), modes.GCM(iv))
         encryptor = cipher.encryptor()
