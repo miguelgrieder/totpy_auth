@@ -48,14 +48,18 @@ class Server:
         else:
             return b"Error: No session key established for the client."
 
-    def encrypt_message(self, message, username):
+    def send_message_with_encryption(self, message, client):
         # Cifra mensagem usando a chave de sessão do usuário
-        if username in self.session_keys:
-            session_key = self.session_keys[username]
+        if client.username in self.session_keys:
+            session_key = self.session_keys[client.username]
             iv = os.urandom(12)
             cipher = Cipher(algorithms.AES(session_key), modes.GCM(iv))
             encryptor = cipher.encryptor()
             encrypted_message = encryptor.update(message) + encryptor.finalize()
-            return iv + encryptor.tag + encrypted_message
+            full_encrypted_message = iv + encryptor.tag + encrypted_message
+            print("Encrypted message sent to client:", encrypted_message)
+            decrypted_message = client.receive_and_decrypt_message(full_encrypted_message)
+            print("Decrypted message received from client:", decrypted_message.decode())
+            return True
         else:
-            return b"Error: No session key established for the client."
+            return False

@@ -20,7 +20,9 @@ class KeyDerivation:
             iterations=iterations,
             backend=default_backend(),
         )
-        key = kdf.derive(password.encode())
+        if isinstance(password, str) and not isinstance(password, bytes):
+            password = password.encode()
+        key = kdf.derive(password)
         return key
 
     def derive_scrypt_key(self, password, salt=None, length=32, n=2**14, r=8, p=1):

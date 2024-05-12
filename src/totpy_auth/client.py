@@ -45,20 +45,26 @@ class Client:
 
     def establish_session_key(self):
         # Deriva uma chave simétrica de sessão usando PBKDF2
-        combined_code = self.token + self.totp_secret
+        combined_code = self.token + self.totp_secret.encode("utf-8")
         key_derivation = KeyDerivation()
         self.session_key = key_derivation.derive_pbkdf2_key(combined_code)
-        self.server.receive_session_key(self.session_key)
+        self.server.receive_session_key(self.username, self.session_key)
 
-    def encrypt_message(self, message):
+    def send_message_with_encryption(self, message):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(self.session_key), modes.GCM(iv))
         encryptor = cipher.encryptor()
         encrypted_message = encryptor.update(message) + encryptor.finalize()
-        return iv + encryptor.tag + encrypted_message
+        full_encrypted_message = iv + encryptor.tag + encrypted_message
+        print("Encrypted message sent to server:", full_encrypted_message)
+        decrypted_message = self.server.receive_encrypted_message(
+            self.username, full_encrypted_message
+        )
+        print("Decrypted message received from server:", decrypted_message.decode())
+        return True
 
-    def decrypt_message(self, encrypted_message):
+    def receive_and_decrypt_message(self, encrypted_message):
         # Decifra a mensagem usando a chave simétrica de sessão e o modo GCM
         iv = encrypted_message[:12]
         tag = encrypted_message[12:28]

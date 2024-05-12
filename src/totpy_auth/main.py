@@ -27,20 +27,11 @@ def main():
             # Loop de troca de mensagens cifradas
             while True:
                 message_to_server = input("Enter message to send to server: ").encode()
-                encrypted_message = client.encrypt_message(message_to_server)
-                print("Encrypted message sent to server:", encrypted_message)
-
-                decrypted_message = server.receive_encrypted_message(
-                    client.username, encrypted_message
-                )
-                print("Decrypted message received from server:", decrypted_message.decode())
+                encrypted_message = client.send_message_with_encryption(message_to_server)
 
                 message_to_client = input("Enter message to send to client: ").encode()
-                encrypted_message = server.encrypt_message(message_to_client, client.username)
-                print("Encrypted message sent to client:", encrypted_message)
+                encrypted_message = server.send_message_with_encryption(message_to_client, client)
 
-                decrypted_message = client.decrypt_message(encrypted_message)
-                print("Decrypted message received from client:", decrypted_message.decode())
         else:
             print("Invalid TOTP code")
     else:
