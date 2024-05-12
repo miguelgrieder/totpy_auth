@@ -63,6 +63,8 @@ pycparser==2.22
     # via
     #   -r requirements/requirements.txt
     #   cffi
+pyotp==2.9.0
+    # via -r requirements/requirements.txt
 pyproject-api==1.6.1
     # via tox
 pytest==8.2.0
