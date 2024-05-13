@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 class Client:
     def __init__(self, server):
         self.username = input("Client: Enter client username: ")
-        self.password = getpass.getpass("Client: Enter client password: ")
+        self.password = getpass.getpass(f"{self.username}: Enter client password: ")
         self.server = server
         self.token = None
         self.totp_secret = None
@@ -68,13 +68,13 @@ class Client:
 
     def send_encrypted_message_to_server(self):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
-        message_to_server = input("Client: Enter message to send to server: ").encode()
+        message_to_server = input(f"{self.username}: Enter message to send to server: ").encode()
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(self.session_key), modes.GCM(iv))
         encryptor = cipher.encryptor()
         encrypted_message = encryptor.update(message_to_server) + encryptor.finalize()
         full_encrypted_message = iv + encryptor.tag + encrypted_message
-        print("Client: Encrypted message sent to server:", full_encrypted_message)
+        print(f"{self.username}: Encrypted message sent to server:", full_encrypted_message)
         success_decrypt_by_server = self.server.receive_encrypted_message(
             self.username, full_encrypted_message
         )
@@ -89,7 +89,7 @@ class Client:
         decryptor = cipher.decryptor()
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
         print(
-            f"Client: Message received from server decrypted: {decrypted_message.decode()}",
+            f"{self.username}: Message received from server decrypted: {decrypted_message.decode()}",
             end="\n\n",
         )
         return decrypted_message
