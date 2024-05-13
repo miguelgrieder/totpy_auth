@@ -1,4 +1,3 @@
-import getpass
 import os
 
 import pyotp
@@ -11,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 class Client:
     def __init__(self, server):
         self.username = input("Client: Enter client username: ")
-        self.__password = getpass.getpass(f"{self.username}: Enter client password: ")
+        self.__password = input(f"{self.username}: Enter client password: ")
         self.__server = server
         self.__password_hash = None
         self.__totp_secret = None
