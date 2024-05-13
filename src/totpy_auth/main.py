@@ -5,9 +5,9 @@ from totpy_auth.server import Server
 def main():
     server = Server()
     client = Client(server)
-    token_valid = client.register_in_server()
+    registration_success = client.register_in_server()
 
-    if token_valid:
+    if registration_success:
         client.generate_totp_secret_in_server_and_register()
         totp_code_valid = client.send_totp_code()
 

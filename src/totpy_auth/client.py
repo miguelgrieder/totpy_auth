@@ -13,10 +13,11 @@ class Client:
         self.username = input("Client: Enter client username: ")
         self.password = getpass.getpass(f"{self.username}: Enter client password: ")
         self.server = server
-        self.token = None
+        self.password_hash = None
         self.totp_secret = None
         self.session_key = None
         self.__salt = os.urandom(16)  # Gera um salt aleatório
+        print(f"{self.username} - debug: salt generated: {self.__salt}", end="\n\n")
 
     def derive_pbkdf2_key(self, password, iterations=100):
         kdf = PBKDF2HMAC(
@@ -31,21 +32,25 @@ class Client:
         key = kdf.derive(password)
         return key
 
-    def derive_authentication_token(self):
+    def derive_password_hash(self):
         # Deriva token de autenticação usando PBKDF2
-        self.token = self.derive_pbkdf2_key(self.password)
+        self.password_hash = self.derive_pbkdf2_key(self.password)
+        print(f"{self.username} - debug: password_hash generated {self.password_hash}")
 
     def register_in_server(self):
         # Envia nome do usuário, token e horário para o servidor
-        self.derive_authentication_token()
-        token_valid = self.server.register_client_authentication(self.username, self.token)
-        return token_valid
+        self.derive_password_hash()
+        registration_success = self.server.register_client_authentication(
+            self.username, self.password_hash
+        )
+        return registration_success
 
     def generate_totp_secret_in_server_and_register(self):
-        totp_secret = self.server.register_client_totp_secret(self.username)
+        totp_secret = self.server.generate_client_totp_secret_and_send(self.username)
         # Salva o segredo TOTP do servidor
         if totp_secret:
             self.totp_secret = totp_secret
+            print(f"{self.username} - debug: totp_secret saved {totp_secret}", end="\n\n")
         else:
             return False
 
@@ -57,13 +62,17 @@ class Client:
     def send_totp_code(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
+        print(f"{self.username} - debug: Generated totp_code {totp_code} and sending to server")
         totp_code_valid = self.server.receive_totp_code(self.username, totp_code)
         return totp_code_valid
 
     def establish_session_key(self):
         # Deriva uma chave simétrica de sessão usando PBKDF2
-        combined_code = self.token + self.totp_secret.encode("utf-8")
+        combined_code = self.password_hash + self.totp_secret.encode("utf-8")
         self.session_key = self.derive_pbkdf2_key(combined_code)
+        print(
+            f"{self.username} - debug: created session_key with password_hash and totp_secret - {self.session_key}"
+        )
         self.server.receive_session_key(self.username, self.session_key)
 
     def send_encrypted_message_to_server(self):
@@ -74,6 +83,9 @@ class Client:
         encryptor = cipher.encryptor()
         encrypted_message = encryptor.update(message_to_server) + encryptor.finalize()
         full_encrypted_message = iv + encryptor.tag + encrypted_message
+        print(
+            f"{self.username} - debug: Generated full encrypted message with [iv, tag, cipher(session_key, iv, message)]"
+        )
         print(f"{self.username}: Encrypted message sent to server:", full_encrypted_message)
         success_decrypt_by_server = self.server.receive_encrypted_message(
             self.username, full_encrypted_message
