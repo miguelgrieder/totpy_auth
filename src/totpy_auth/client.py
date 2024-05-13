@@ -56,6 +56,22 @@ class Client:
         totp = pyotp.TOTP(self.__totp_secret)
         return totp.now()
 
+    def send_2fa(self):
+        password_hash_login_valid = self.__server.password_hash_login(
+            self.username, self.__password_hash
+        )
+        if password_hash_login_valid:
+            totp_code_valid = self.send_totp_code()
+            if totp_code_valid:
+                self.establish_session_key()
+                print(f"{self.username}: Password hash login and totp validation succeeded")
+                return True
+            else:
+                print(f"{self.username}: totp code INVALID!")
+        else:
+            print(f"{self.username}: Password login INVALID!")
+        return False
+
     def send_totp_code(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()

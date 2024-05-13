@@ -20,10 +20,14 @@ class Server:
         # Armazena a chave derivada do scrypt_key
         if username not in self.__users_password_hash_with_scrypt:
             totp_secret = self.generate_client_totp_secret(username)
-            self.__users_password_hash_with_scrypt[username] = scrypt_key
-            self.__salts[username] = salt
-            print(f"Server: {username} registered successfully!")
-            return totp_secret
+            if totp_secret:
+                self.__users_password_hash_with_scrypt[username] = scrypt_key
+                self.__salts[username] = salt
+                print(f"Server: {username} registered successfully!")
+                return totp_secret
+            else:
+                print(f"Server: {username} registered FAILED!")
+                return False
         else:
             print(f"Server: User {username} already registered!")
             return None
@@ -57,6 +61,11 @@ class Server:
     def compare_password_hash(self, username, scrypt_key):
         # Compara o scrypt_key com o armazenado
         return self.__users_password_hash_with_scrypt.get(username) == scrypt_key
+
+    def password_hash_login(self, username, password_hash):
+        scrypt_key = self.derive_scrypt_key(password_hash, self.__salts[username])
+        password_hash_login_valid = self.compare_password_hash(username, scrypt_key)
+        return password_hash_login_valid
 
     def generate_client_totp_secret(self, username):
         # Gera e armazena o segredo TOTP para o usuário

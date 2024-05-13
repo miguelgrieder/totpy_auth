@@ -15,13 +15,12 @@ def main():
         totp_code_valid = True
         while totp_code_valid:
             print("-- Starting a session cycle --", end="\n\n")
-            totp_code_valid = client.send_totp_code()
+            totp_code_valid = client.send_2fa()
 
-            client.establish_session_key()
+            if totp_code_valid:
+                client.send_encrypted_message_to_server()
+                server.send_encrypted_message_to_client(client)
 
-            client.send_encrypted_message_to_server()
-
-            server.send_encrypted_message_to_client(client)
             if not LOOP_SESSION:
                 print("-- Chat session completed, exiting app --", end="\n\n")
                 sys.exit(0)
@@ -30,4 +29,4 @@ def main():
         else:
             print("App: Invalid TOTP code")
     else:
-        print("App: Invalid authentication token")
+        print("App: Client registration failed, closing app!")
