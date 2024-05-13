@@ -1,7 +1,9 @@
 import os
 
 import pyotp
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 
 class Server:
@@ -9,19 +11,49 @@ class Server:
         self.users = {}
         self.totp_secrets = {}
         self.session_keys = {}
+        self.__salt = os.urandom(16)
 
     def register_client_authentication(self, username, password_hash):
-        # Armazena o token de autenticação do usuário
-        if self.users.__contains__(username):
-            print(f"Server: {username} already registered!")
-            password_hash_valid = False
+        # Deriva uma chave a partir do password_hash usando Scrypt
+        key = self.derive_scrypt_key(password_hash)
+        # Armazena a chave derivada do password_hash
+        if username not in self.users:
+            self.users[username] = key
+            print(f"Server: {username} registered successfully!")
+            return True
         else:
-            self.users[username] = password_hash
-            password_hash_valid = self.compare_password_hash(username, password_hash)
-            print(
-                f"Server: debug - {username} saved with password_hash {password_hash}", end="\n\n"
-            )
-        return password_hash_valid
+            print(f"Server: User {username} already registered!")
+            return False
+
+    def derive_scrypt_key(self, password_hash, salt=None, length=32, n=2**14, r=8, p=1):
+        """
+        Deriva uma chave usando o algoritmo Scrypt.
+
+        Parâmetros:
+        - password_hash: O hash da senha do usuário.
+        - salt: Um valor aleatório usado para salgar o hash (padrão: novo salt gerado para o servidor).
+        - length: O comprimento da chave derivada em bytes (padrão: 32 bytes).
+        - n: O parâmetro N que afeta o uso de memória (padrão: 2^14).
+        - r: O parâmetro r que afeta a computação da chave (padrão: 8).
+        - p: O parâmetro p que afeta a computação da chave (padrão: 1).
+
+        Retorna:
+        - A chave derivada.
+        """
+        if salt is None:
+            salt = self.__salt
+
+        # Deriva a chave usando Scrypt
+        kdf = Scrypt(
+            salt=salt,
+            length=length,  # Tamanho da chave de 32 bytes
+            n=n,
+            r=r,
+            p=p,
+            backend=default_backend(),
+        )
+        key = kdf.derive(password_hash)
+        return key
 
     def compare_password_hash(self, username, token):
         # Compara o token de autenticação recebido com o armazenado
