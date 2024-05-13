@@ -4,6 +4,8 @@ import pyotp
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
 
 
 class Server:
@@ -58,6 +60,19 @@ class Server:
         key = kdf.derive(password_hash)
         return key
 
+    def derive_pbkdf2_key(self, information, salt, iterations=100):
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=iterations,
+            backend=default_backend(),
+        )
+        if isinstance(information, str) and not isinstance(information, bytes):
+            information = information.encode("utf-8")
+        key = kdf.derive(information)
+        return key
+
     def compare_password_hash(self, username, scrypt_key):
         # Compara o scrypt_key com o armazenado
         return self.__users_password_hash_with_scrypt.get(username) == scrypt_key
@@ -89,7 +104,7 @@ class Server:
         )
         if totp_verification:
             # Armazena a chave de sessão do usuário
-            session_key = os.urandom(32)
+            session_key = self.derive_pbkdf2_key(totp_code, self.__salts[username])
             self.__session_keys[username] = session_key
             print(
                 f"Server: debug - saved generated session key for {username} - {self.__session_keys[username]}"
