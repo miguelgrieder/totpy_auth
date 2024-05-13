@@ -15,10 +15,10 @@ class Server:
 
     def register_client_authentication(self, username, password_hash):
         # Deriva uma chave a partir do password_hash usando Scrypt
-        key = self.derive_scrypt_key(password_hash)
-        # Armazena a chave derivada do password_hash
+        scrypt_key = self.derive_scrypt_key(password_hash)
+        # Armazena a chave derivada do scrypt_key
         if username not in self.__users_password_hash_with_scrypt:
-            self.__users_password_hash_with_scrypt[username] = key
+            self.__users_password_hash_with_scrypt[username] = scrypt_key
             print(f"Server: {username} registered successfully!")
             return True
         else:
@@ -45,7 +45,7 @@ class Server:
         # Deriva a chave usando Scrypt
         kdf = Scrypt(
             salt=salt,
-            length=length,  # Tamanho da chave de 32 bytes
+            length=length,
             n=n,
             r=r,
             p=p,
@@ -54,9 +54,9 @@ class Server:
         key = kdf.derive(password_hash)
         return key
 
-    def compare_password_hash(self, username, token):
-        # Compara o token de autenticação recebido com o armazenado
-        return self.__users_password_hash_with_scrypt.get(username) == token
+    def compare_password_hash(self, username, scrypt_key):
+        # Compara o scrypt_key com o armazenado
+        return self.__users_password_hash_with_scrypt.get(username) == scrypt_key
 
     def generate_client_totp_secret_and_send(self, username):
         # Gera e armazena o segredo TOTP para o usuário

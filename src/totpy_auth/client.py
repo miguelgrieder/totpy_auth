@@ -38,7 +38,7 @@ class Client:
         print(f"{self.username} - debug: password_hash generated {self.__password_hash}")
 
     def register_in_server(self):
-        # Envia nome do usuário, token e horário para o servidor
+        # Envia nome do usuário e password_hash para o servidor
         self.derive_password_hash()
         registration_success = self.__server.register_client_authentication(
             self.username, self.__password_hash
