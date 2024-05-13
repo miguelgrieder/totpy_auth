@@ -40,17 +40,14 @@ class Client:
     def register_in_server(self):
         # Envia nome do usuário e password_hash para o servidor
         self.derive_password_hash()
-        registration_success = self.__server.register_client_authentication(
+        totp_secret = self.__server.register_client_authentication(
             self.username, self.__password_hash
         )
-        return registration_success
-
-    def generate_totp_secret_in_server_and_register(self):
-        totp_secret = self.__server.generate_client_totp_secret_and_send(self.username)
         # Salva o segredo TOTP do servidor
         if totp_secret:
             self.__totp_secret = totp_secret
             print(f"{self.username} - debug: totp_secret saved {totp_secret}", end="\n\n")
+            return True
         else:
             return False
 

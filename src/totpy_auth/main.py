@@ -12,7 +12,6 @@ def main():
     registration_success = client.register_in_server()
 
     if registration_success:
-        client.generate_totp_secret_in_server_and_register()
         totp_code_valid = client.send_totp_code()
 
         if totp_code_valid:

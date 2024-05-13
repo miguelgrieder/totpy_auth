@@ -19,13 +19,14 @@ class Server:
         scrypt_key = self.derive_scrypt_key(password_hash, salt)
         # Armazena a chave derivada do scrypt_key
         if username not in self.__users_password_hash_with_scrypt:
+            totp_secret = self.generate_client_totp_secret(username)
             self.__users_password_hash_with_scrypt[username] = scrypt_key
             self.__salts[username] = salt
             print(f"Server: {username} registered successfully!")
-            return True
+            return totp_secret
         else:
             print(f"Server: User {username} already registered!")
-            return False
+            return None
 
     def derive_scrypt_key(self, password_hash, salt, length=32, n=2**14, r=8, p=1):
         """Deriva uma chave usando o algoritmo Scrypt.
@@ -57,15 +58,15 @@ class Server:
         # Compara o scrypt_key com o armazenado
         return self.__users_password_hash_with_scrypt.get(username) == scrypt_key
 
-    def generate_client_totp_secret_and_send(self, username):
+    def generate_client_totp_secret(self, username):
         # Gera e armazena o segredo TOTP para o usuário
         if self.__users_totp_secrets.__contains__(username):
             raise Exception("Server: User already have a totp_secret!")
         else:
             self.__users_totp_secrets[username] = pyotp.random_base32()
             print(
-                f"Server: debug - Generated totp_secret for {username} and "
-                f"sending {self.__users_totp_secrets[username]}"
+                f"Server: debug - Generated totp_secret for {username} "
+                f"{self.__users_totp_secrets[username]}"
             )
         return self.__users_totp_secrets[username]
 
