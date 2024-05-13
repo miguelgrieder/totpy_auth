@@ -18,6 +18,8 @@ def main():
             totp_code_valid = client.send_2fa()
 
             if totp_code_valid:
+                print("-- Login 2fa success --", end="\n\n")
+
                 client.send_encrypted_message_to_server()
                 server.send_encrypted_message_to_client(client)
 

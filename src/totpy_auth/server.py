@@ -79,7 +79,7 @@ class Server:
             )
         return self.__users_totp_secrets[username]
 
-    def receive_totp_code(self, username, totp_code):
+    def verify_totp_code_and_generate_session_key(self, username, totp_code):
         # Valida o código TOTP recebido
         totp = pyotp.TOTP(self.__users_totp_secrets[username])
         totp_verification = totp.verify(totp_code)
@@ -87,12 +87,15 @@ class Server:
             f"Server: debug - {username} totp_code {totp_code} verification: {totp_verification}",
             end="\n\n",
         )
-        return totp_verification
-
-    def receive_session_key(self, username, session_key):
-        # Armazena a chave de sessão do usuário
-        self.__session_keys[username] = session_key
-        print(f"Server: debug - {username} saved session key {self.__session_keys[username]}")
+        if totp_verification:
+            # Armazena a chave de sessão do usuário
+            session_key = os.urandom(32)
+            self.__session_keys[username] = session_key
+            print(
+                f"Server: debug - saved generated session key for {username} - {self.__session_keys[username]}"
+            )
+            return self.__session_keys[username]
+        return None
 
     def receive_encrypted_message(self, username, encrypted_message):
         # Recebe e decifra mensagem cifrada do cliente

@@ -61,10 +61,10 @@ class Client:
             self.username, self.__password_hash
         )
         if password_hash_login_valid:
-            totp_code_valid = self.send_totp_code()
-            if totp_code_valid:
-                self.establish_session_key()
-                print(f"{self.username}: Password hash login and totp validation succeeded")
+            session_key = self.send_totp_code_and_get_session_key()
+            if session_key:
+                self.__session_key = session_key
+                print(f"{self.username}: Password hash login and totp validation success")
                 return True
             else:
                 print(f"{self.username}: totp code INVALID!")
@@ -72,22 +72,14 @@ class Client:
             print(f"{self.username}: Password login INVALID!")
         return False
 
-    def send_totp_code(self):
+    def send_totp_code_and_get_session_key(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
         print(f"{self.username} - debug: Generated totp_code {totp_code} and sending to server")
-        totp_code_valid = self.__server.receive_totp_code(self.username, totp_code)
-        return totp_code_valid
-
-    def establish_session_key(self):
-        # Deriva uma chave simétrica de sessão usando PBKDF2
-        combined_code = self.__password_hash + self.__totp_secret.encode("utf-8")
-        self.__session_key = self.derive_pbkdf2_key(combined_code)
-        print(
-            f"{self.username} - debug: created session_key with password_hash and "
-            f"totp_secret - {self.__session_key}"
+        session_key = self.__server.verify_totp_code_and_generate_session_key(
+            self.username, totp_code
         )
-        self.__server.receive_session_key(self.username, self.__session_key)
+        return session_key
 
     def send_encrypted_message_to_server(self):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
