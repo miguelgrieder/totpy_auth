@@ -8,17 +8,17 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 class Server:
     def __init__(self):
-        self.users = {}
-        self.totp_secrets = {}
-        self.session_keys = {}
+        self.__users_password_hash_with_scrypt = {}
+        self.__users_totp_secrets = {}
+        self.__session_keys = {}
         self.__salt = os.urandom(16)
 
     def register_client_authentication(self, username, password_hash):
         # Deriva uma chave a partir do password_hash usando Scrypt
         key = self.derive_scrypt_key(password_hash)
         # Armazena a chave derivada do password_hash
-        if username not in self.users:
-            self.users[username] = key
+        if username not in self.__users_password_hash_with_scrypt:
+            self.__users_password_hash_with_scrypt[username] = key
             print(f"Server: {username} registered successfully!")
             return True
         else:
@@ -57,22 +57,22 @@ class Server:
 
     def compare_password_hash(self, username, token):
         # Compara o token de autenticação recebido com o armazenado
-        return self.users.get(username) == token
+        return self.__users_password_hash_with_scrypt.get(username) == token
 
     def generate_client_totp_secret_and_send(self, username):
         # Gera e armazena o segredo TOTP para o usuário
-        if self.totp_secrets.__contains__(username):
+        if self.__users_totp_secrets.__contains__(username):
             raise Exception("Server: User already have a totp_secret!")
         else:
-            self.totp_secrets[username] = pyotp.random_base32()
+            self.__users_totp_secrets[username] = pyotp.random_base32()
             print(
-                f"Server: debug - Generated totp_secret for {username} and sending {self.totp_secrets[username]}"
+                f"Server: debug - Generated totp_secret for {username} and sending {self.__users_totp_secrets[username]}"
             )
-        return self.totp_secrets[username]
+        return self.__users_totp_secrets[username]
 
     def receive_totp_code(self, username, totp_code):
         # Valida o código TOTP recebido
-        totp = pyotp.TOTP(self.totp_secrets[username])
+        totp = pyotp.TOTP(self.__users_totp_secrets[username])
         totp_verification = totp.verify(totp_code)
         print(
             f"Server: debug - {username} totp_code {totp_code} verification: {totp_verification}",
@@ -82,13 +82,13 @@ class Server:
 
     def receive_session_key(self, username, session_key):
         # Armazena a chave de sessão do usuário
-        self.session_keys[username] = session_key
-        print(f"Server: debug - {username} saved session key {self.session_keys[username]}")
+        self.__session_keys[username] = session_key
+        print(f"Server: debug - {username} saved session key {self.__session_keys[username]}")
 
     def receive_encrypted_message(self, username, encrypted_message):
         # Recebe e decifra mensagem cifrada do cliente
-        if username in self.session_keys:
-            session_key = self.session_keys[username]
+        if username in self.__session_keys:
+            session_key = self.__session_keys[username]
             iv = encrypted_message[:12]
             tag = encrypted_message[12:28]
             ciphertext = encrypted_message[28:]
@@ -106,11 +106,11 @@ class Server:
 
     def send_encrypted_message_to_client(self, client):
         # Cifra mensagem usando a chave de sessão do usuário
-        if client.username in self.session_keys:
+        if client.username in self.__session_keys:
             message_to_client = input(
                 f"Server: Enter message to send to {client.username}: "
             ).encode()
-            session_key = self.session_keys[client.username]
+            session_key = self.__session_keys[client.username]
             iv = os.urandom(12)
             cipher = Cipher(algorithms.AES(session_key), modes.GCM(iv))
             encryptor = cipher.encryptor()
