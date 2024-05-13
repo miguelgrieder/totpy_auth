@@ -74,7 +74,8 @@ class Client:
     def send_totp_code_and_get_session_key(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
-        print(f"Mobile: {self.username} - debug: Generated totp_code {totp_code} and sending to server")
+        print(f"Mobile: {self.username} - debug: Generated totp_code {totp_code}")
+        print(f"Computer: {self.username} - debug: User wrote totp_code {totp_code} and sending to server")
         session_key = self.__server.verify_totp_code_and_generate_session_key(
             self.username, totp_code
         )
