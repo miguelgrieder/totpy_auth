@@ -45,7 +45,8 @@ class Client:
         # Salva o segredo TOTP do servidor
         if totp_secret:
             self.__totp_secret = totp_secret
-            print(f"Mobile: {self.username} - debug: totp_secret saved {totp_secret}", end="\n\n")
+            print(f"Computer: {self.username} - debug: totp_secret(QRCode) displayed.")
+            print(f"Mobile: {self.username} - debug: totp_secret(QRCode) read and saved {totp_secret}", end="\n\n")
             return True
         else:
             return False
