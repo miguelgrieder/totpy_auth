@@ -44,8 +44,11 @@ class Client:
 
     def generate_totp_secret_in_server_and_register(self):
         totp_secret = self.server.register_client_totp_secret(self.username)
-        # Recebe o segredo TOTP do servidor
-        self.totp_secret = totp_secret
+        # Salva o segredo TOTP do servidor
+        if totp_secret:
+            self.totp_secret = totp_secret
+        else:
+            return False
 
     def generate_totp_code(self):
         # Gera código TOTP usando o segredo TOTP
