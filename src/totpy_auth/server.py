@@ -11,21 +11,23 @@ class Server:
         self.__users_password_hash_with_scrypt = {}
         self.__users_totp_secrets = {}
         self.__session_keys = {}
-        self.__salt = os.urandom(16)
+        self.__salts = {}  # Dicionário para armazenar os salts únicos de cada cliente
 
     def register_client_authentication(self, username, password_hash):
+        salt = os.urandom(16)
         # Deriva uma chave a partir do password_hash usando Scrypt
-        scrypt_key = self.derive_scrypt_key(password_hash)
+        scrypt_key = self.derive_scrypt_key(password_hash, salt)
         # Armazena a chave derivada do scrypt_key
         if username not in self.__users_password_hash_with_scrypt:
             self.__users_password_hash_with_scrypt[username] = scrypt_key
+            self.__salts[username] = salt
             print(f"Server: {username} registered successfully!")
             return True
         else:
             print(f"Server: User {username} already registered!")
             return False
 
-    def derive_scrypt_key(self, password_hash, salt=None, length=32, n=2**14, r=8, p=1):
+    def derive_scrypt_key(self, password_hash, salt, length=32, n=2**14, r=8, p=1):
         """Deriva uma chave usando o algoritmo Scrypt.
 
         Parâmetros:
@@ -39,9 +41,6 @@ class Server:
         Retorna:
         - A chave derivada.
         """
-        if salt is None:
-            salt = self.__salt
-
         # Deriva a chave usando Scrypt
         kdf = Scrypt(
             salt=salt,
