@@ -26,12 +26,11 @@ class Server:
             return False
 
     def derive_scrypt_key(self, password_hash, salt=None, length=32, n=2**14, r=8, p=1):
-        """
-        Deriva uma chave usando o algoritmo Scrypt.
+        """Deriva uma chave usando o algoritmo Scrypt.
 
         Parâmetros:
         - password_hash: O hash da senha do usuário.
-        - salt: Um valor aleatório usado para salgar o hash (padrão: novo salt gerado para o servidor).
+        - salt: Usado para randomizar o hash (padrão: novo salt gerado para o servidor).
         - length: O comprimento da chave derivada em bytes (padrão: 32 bytes).
         - n: O parâmetro N que afeta o uso de memória (padrão: 2^14).
         - r: O parâmetro r que afeta a computação da chave (padrão: 8).
@@ -66,7 +65,8 @@ class Server:
         else:
             self.__users_totp_secrets[username] = pyotp.random_base32()
             print(
-                f"Server: debug - Generated totp_secret for {username} and sending {self.__users_totp_secrets[username]}"
+                f"Server: debug - Generated totp_secret for {username} and "
+                f"sending {self.__users_totp_secrets[username]}"
             )
         return self.__users_totp_secrets[username]
 
@@ -117,7 +117,8 @@ class Server:
             encrypted_message = encryptor.update(message_to_client) + encryptor.finalize()
             full_encrypted_message = iv + encryptor.tag + encrypted_message
             print(
-                f"Server - debug: Generated full encrypted message with [iv, tag, cipher(session_key, iv, message)]"
+                f"Server - debug: Generated full encrypted message with "
+                f"[iv, tag, cipher(session_key, iv, message)]"
             )
 
             print(f"Server: Encrypted message sent to {client.username}:", encrypted_message)

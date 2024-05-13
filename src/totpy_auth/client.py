@@ -71,7 +71,8 @@ class Client:
         combined_code = self.__password_hash + self.__totp_secret.encode("utf-8")
         self.__session_key = self.derive_pbkdf2_key(combined_code)
         print(
-            f"{self.username} - debug: created session_key with password_hash and totp_secret - {self.__session_key}"
+            f"{self.username} - debug: created session_key with password_hash and "
+            f"totp_secret - {self.__session_key}"
         )
         self.__server.receive_session_key(self.username, self.__session_key)
 
@@ -84,7 +85,8 @@ class Client:
         encrypted_message = encryptor.update(message_to_server) + encryptor.finalize()
         full_encrypted_message = iv + encryptor.tag + encrypted_message
         print(
-            f"{self.username} - debug: Generated full encrypted message with [iv, tag, cipher(session_key, iv, message)]"
+            f"{self.username} - debug: Generated full encrypted message with "
+            f"[iv, tag, cipher(session_key, iv, message)]"
         )
         print(f"{self.username}: Encrypted message sent to server:", full_encrypted_message)
         success_decrypt_by_server = self.__server.receive_encrypted_message(
@@ -101,7 +103,8 @@ class Client:
         decryptor = cipher.decryptor()
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
         print(
-            f"{self.username}: Message received from server decrypted: {decrypted_message.decode()}",
+            f"{self.username}: Message received from server "
+            f"decrypted: {decrypted_message.decode()}",
             end="\n\n",
         )
         return decrypted_message
