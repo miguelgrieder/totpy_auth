@@ -18,8 +18,6 @@ class Client:
         self.session_key = None
         self.__salt = os.urandom(16)  # Gera um salt aleatório
 
-        self.derive_authentication_token()
-
     def derive_pbkdf2_key(self, password, iterations=100):
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -39,6 +37,7 @@ class Client:
 
     def register_in_server(self):
         # Envia nome do usuário, token e horário para o servidor
+        self.derive_authentication_token()
         token_valid = self.server.register_client_authentication(self.username, self.token)
         return token_valid
 
