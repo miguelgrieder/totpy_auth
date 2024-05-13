@@ -21,7 +21,9 @@ def main():
                 print("-- Login 2fa success --", end="\n\n")
 
                 client.send_encrypted_message_to_server()
-                server.send_encrypted_message_to_client(client)
+                server.send_encrypted_message_to_client(
+                    client.username, client.receive_and_decrypt_message
+                )
 
             if not LOOP_SESSION:
                 print("-- Chat session completed, exiting app --", end="\n\n")

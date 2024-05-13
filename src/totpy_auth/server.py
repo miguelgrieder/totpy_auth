@@ -116,13 +116,11 @@ class Server:
             print(f"Server: {username} dont`t have any active session")
             return False
 
-    def send_encrypted_message_to_client(self, client):
+    def send_encrypted_message_to_client(self, username, client_receive_msg_func):
         # Cifra mensagem usando a chave de sessão do usuário
-        if client.username in self.__session_keys:
-            message_to_client = input(
-                f"Server: Enter message to send to {client.username}: "
-            ).encode()
-            session_key = self.__session_keys[client.username]
+        if username in self.__session_keys:
+            message_to_client = input(f"Server: Enter message to send to {username}: ").encode()
+            session_key = self.__session_keys[username]
             iv = os.urandom(12)
             cipher = Cipher(algorithms.AES(session_key), modes.GCM(iv))
             encryptor = cipher.encryptor()
@@ -133,8 +131,8 @@ class Server:
                 f"[iv, tag, cipher(session_key, iv, message)]"
             )
 
-            print(f"Server: Encrypted message sent to {client.username}:", encrypted_message)
-            success_decrypt_by_client = client.receive_and_decrypt_message(full_encrypted_message)
+            print(f"Server: Encrypted message sent to {username}:", encrypted_message)
+            success_decrypt_by_client = client_receive_msg_func(full_encrypted_message)
             return success_decrypt_by_client
         else:
             return False
