@@ -12,22 +12,21 @@ def main():
     registration_success = client.register_in_server()
 
     if registration_success:
-        totp_code_valid = client.send_totp_code()
-
-        if totp_code_valid:
+        totp_code_valid = True
+        while totp_code_valid:
             print("-- Starting a session cycle --", end="\n\n")
-            # Loop de troca de mensagens cifradas reestabelecendo session key
-            while True:
-                client.establish_session_key()
+            totp_code_valid = client.send_totp_code()
 
-                client.send_encrypted_message_to_server()
+            client.establish_session_key()
 
-                server.send_encrypted_message_to_client(client)
-                if not LOOP_SESSION:
-                    print("-- Chat session completed, exiting app --", end="\n\n")
-                    sys.exit(0)
+            client.send_encrypted_message_to_server()
 
-                print("-- Chat session completed, starting a new one. --", end="\n\n")
+            server.send_encrypted_message_to_client(client)
+            if not LOOP_SESSION:
+                print("-- Chat session completed, exiting app --", end="\n\n")
+                sys.exit(0)
+
+            print("-- Chat session completed, starting a new one. --", end="\n\n")
         else:
             print("App: Invalid TOTP code")
     else:
