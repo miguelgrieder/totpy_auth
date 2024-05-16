@@ -46,7 +46,10 @@ class Client:
         if totp_secret:
             self.__totp_secret = totp_secret
             print(f"Computer: {self.username} - debug: totp_secret(QRCode) displayed.")
-            print(f"Mobile: {self.username} - debug: totp_secret(QRCode) read and saved {totp_secret}", end="\n\n")
+            print(
+                f"Mobile: {self.username} - debug: totp_secret(QRCode) read and saved {totp_secret}",
+                end="\n\n",
+            )
             return True
         else:
             return False
@@ -76,7 +79,9 @@ class Client:
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
         print(f"Mobile: {self.username} - debug: Generated totp_code {totp_code}")
-        print(f"Computer: {self.username} - debug: User wrote totp_code {totp_code} and sending to server")
+        print(
+            f"Computer: {self.username} - debug: User wrote totp_code {totp_code} and sending to server"
+        )
         session_key = self.__server.verify_totp_code_and_generate_session_key(
             self.username, totp_code
         )
@@ -84,7 +89,9 @@ class Client:
 
     def send_encrypted_message_to_server(self):
         # Cifra a mensagem usando a chave simétrica de sessão e o modo GCM
-        message_to_server = input(f"Computer: {self.username}: Enter message to send to server: ").encode()
+        message_to_server = input(
+            f"Computer: {self.username}: Enter message to send to server: "
+        ).encode()
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(self.__session_key), modes.GCM(iv))
         encryptor = cipher.encryptor()
@@ -94,7 +101,9 @@ class Client:
             f"Computer: {self.username} - debug: Generated full encrypted message with "
             f"[iv, tag, cipher(session_key, iv, message)]"
         )
-        print(f"Computer: {self.username}: Encrypted message sent to server:", full_encrypted_message)
+        print(
+            f"Computer: {self.username}: Encrypted message sent to server:", full_encrypted_message
+        )
         success_decrypt_by_server = self.__server.receive_encrypted_message(
             self.username, full_encrypted_message
         )
