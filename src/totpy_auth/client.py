@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pyotp
@@ -5,6 +6,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+log = logging.getLogger("totpy_auth")
 
 
 class Client:
@@ -16,7 +19,7 @@ class Client:
         self.__totp_secret = None
         self.__session_key = None
         self.__salt = os.urandom(16)  # Gera um salt aleatório
-        print(f"Computer: {self.username} - debug: salt generated: {self.__salt}", end="\n\n")
+        log.debug(f"Computer: {self.username}:salt generated: {self.__salt}")
 
     def derive_pbkdf2_key(self, password, iterations=100):
         kdf = PBKDF2HMAC(
@@ -34,7 +37,7 @@ class Client:
     def derive_password_hash(self):
         # Deriva token de autenticação usando PBKDF2
         self.__password_hash = self.derive_pbkdf2_key(self.__password)
-        print(f"Computer: {self.username} - debug: password_hash generated {self.__password_hash}")
+        log.debug(f"Computer: {self.username}: password_hash generated {self.__password_hash}")
 
     def register_in_server(self):
         # Envia nome do usuário e password_hash para o servidor
@@ -45,11 +48,8 @@ class Client:
         # Salva o segredo TOTP do servidor
         if totp_secret:
             self.__totp_secret = totp_secret
-            print(f"Computer: {self.username} - debug: totp_secret(QRCode) displayed.")
-            print(
-                f"Mobile: {self.username} - debug: totp_secret(QRCode) read and saved {totp_secret}",
-                end="\n\n",
-            )
+            log.debug(f"Computer {self.username}: totp_secret(QRCode) displayed.")
+            log.debug(f"Mobile {self.username}: totp_secret(QRCode) read and saved {totp_secret}")
             return True
         else:
             return False
@@ -67,20 +67,22 @@ class Client:
             session_key = self.send_totp_code_and_get_session_key()
             if session_key:
                 self.__session_key = session_key
-                print(f"Computer: {self.username}: Password hash login and totp validation success")
+                log.info(
+                    f"Computer: {self.username}: Password hash login and totp validation success"
+                )
                 return True
             else:
-                print(f"Computer: {self.username}: totp code INVALID!")
+                log.info(f"Computer: {self.username}: totp code INVALID!")
         else:
-            print(f"Computer: {self.username}: Password login INVALID!")
+            log.info(f"Computer: {self.username}: Password login INVALID!")
         return False
 
     def send_totp_code_and_get_session_key(self):
         # Envia o código TOTP para o servidor
         totp_code = self.generate_totp_code()
-        print(f"Mobile: {self.username} - debug: Generated totp_code {totp_code}")
-        print(
-            f"Computer: {self.username} - debug: User wrote totp_code {totp_code} and sending to server"
+        log.debug(f"Mobile {self.username}: Generated totp_code {totp_code}")
+        log.debug(
+            f"Computer {self.username}: User wrote totp_code {totp_code} and sending to server"
         )
         session_key = self.__server.verify_totp_code_and_generate_session_key(
             self.username, totp_code
@@ -97,12 +99,12 @@ class Client:
         encryptor = cipher.encryptor()
         encrypted_message = encryptor.update(message_to_server) + encryptor.finalize()
         full_encrypted_message = iv + encryptor.tag + encrypted_message
-        print(
-            f"Computer: {self.username} - debug: Generated full encrypted message with "
-            f"[iv, tag, cipher(session_key, iv, message)]"
+        log.debug(
+            f"Computer {self.username}: Generated full encrypted message "
+            f"with [iv, tag, cipher(session_key, iv, message)]"
         )
-        print(
-            f"Computer: {self.username}: Encrypted message sent to server:", full_encrypted_message
+        log.info(
+            f"Computer {self.username}: Encrypted message sent to server: {full_encrypted_message}"
         )
         success_decrypt_by_server = self.__server.receive_encrypted_message(
             self.username, full_encrypted_message
@@ -117,9 +119,8 @@ class Client:
         cipher = Cipher(algorithms.AES(self.__session_key), modes.GCM(iv, tag))
         decryptor = cipher.decryptor()
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
-        print(
-            f"Computer: {self.username}: Message received from server "
-            f"decrypted: {decrypted_message.decode()}",
-            end="\n\n",
+        log.info(
+            f"Computer {self.username}: Message received from server "
+            f"decrypted: {decrypted_message.decode()}"
         )
         return decrypted_message

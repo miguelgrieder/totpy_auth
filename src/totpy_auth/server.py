@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pyotp
@@ -6,6 +7,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
+log = logging.getLogger("totpy_auth")
 
 
 class Server:
@@ -25,13 +28,13 @@ class Server:
             if totp_secret:
                 self.__users_password_hash_with_scrypt[username] = scrypt_key
                 self.__salts[username] = salt
-                print(f"Server: {username} registered successfully!")
+                log.info(f"Server: {username} registered successfully!")
                 return totp_secret
             else:
-                print(f"Server: {username} registered FAILED!")
+                log.exception(f"Server: {username} registered FAILED!")
                 return False
         else:
-            print(f"Server: User {username} already registered!")
+            log.warning(f"Server: User {username} already registered!")
             return None
 
     def derive_scrypt_key(self, password_hash, salt, length=32, n=2**14, r=8, p=1):
@@ -88,8 +91,8 @@ class Server:
             raise Exception("Server: User already have a totp_secret!")
         else:
             self.__users_totp_secrets[username] = pyotp.random_base32()
-            print(
-                f"Server: debug - Generated totp_secret for {username} "
+            log.debug(
+                f"Server: Generated totp_secret for {username} "
                 f"{self.__users_totp_secrets[username]}"
             )
         return self.__users_totp_secrets[username]
@@ -98,16 +101,14 @@ class Server:
         # Valida o código TOTP recebido
         totp = pyotp.TOTP(self.__users_totp_secrets[username])
         totp_verification = totp.verify(totp_code)
-        print(
-            f"Server: debug - {username} totp_code {totp_code} verification: {totp_verification}",
-            end="\n\n",
-        )
+        log.debug(f"Server: {username} totp_code {totp_code} verification: {totp_verification}")
         if totp_verification:
             # Armazena a chave de sessão do usuário
             session_key = self.derive_pbkdf2_key(totp_code, self.__salts[username])
             self.__session_keys[username] = session_key
-            print(
-                f"Server: debug - saved generated session key for {username} - {self.__session_keys[username]}"
+            log.debug(
+                f"Server: saved generated session key for {username} - "
+                f"{self.__session_keys[username]}"
             )
             return self.__session_keys[username]
         return None
@@ -122,13 +123,12 @@ class Server:
             cipher = Cipher(algorithms.AES(session_key), modes.GCM(iv, tag))
             decryptor = cipher.decryptor()
             decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
-            print(
+            log.info(
                 f"Server: Message received from {username} decrypted: {decrypted_message.decode()}",
-                end="\n\n",
             )
             return True
         else:
-            print(f"Server: {username} dont`t have any active session")
+            log.info(f"Server: {username} dont`t have any active session")
             return False
 
     def send_encrypted_message_to_client(self, username, client_receive_msg_func):
@@ -141,12 +141,12 @@ class Server:
             encryptor = cipher.encryptor()
             encrypted_message = encryptor.update(message_to_client) + encryptor.finalize()
             full_encrypted_message = iv + encryptor.tag + encrypted_message
-            print(
-                f"Server - debug: Generated full encrypted message with "
-                f"[iv, tag, cipher(session_key, iv, message)]"
+            log.debug(
+                "Server: Generated full encrypted message with "
+                "[iv, tag, cipher(session_key, iv, message)]"
             )
 
-            print(f"Server: Encrypted message sent to {username}:", encrypted_message)
+            log.info(f"Server: Encrypted message sent to {username}: {encrypted_message}")
             success_decrypt_by_client = client_receive_msg_func(full_encrypted_message)
             return success_decrypt_by_client
         else:

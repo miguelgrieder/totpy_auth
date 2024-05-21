@@ -1,9 +1,11 @@
+import logging
 import sys
 
 from totpy_auth.client import Client
 from totpy_auth.server import Server
 
 LOOP_SESSION = False
+log = logging.getLogger("totpy_auth")
 
 
 def main():
@@ -14,11 +16,11 @@ def main():
     if registration_success:
         totp_code_valid = True
         while totp_code_valid:
-            print("-- Starting a session cycle --", end="\n\n")
+            log.info("-- Starting a session cycle --")
             totp_code_valid = client.send_2fa()
 
             if totp_code_valid:
-                print("-- Login 2fa success --", end="\n\n")
+                log.info("-- Login 2fa success --")
 
                 client.send_encrypted_message_to_server()
                 server.send_encrypted_message_to_client(
@@ -26,11 +28,11 @@ def main():
                 )
 
             if not LOOP_SESSION:
-                print("-- Chat session completed, exiting app --", end="\n\n")
+                log.info("-- Chat session completed, exiting app --")
                 sys.exit(0)
 
-            print("-- Chat session completed, starting a new one. --", end="\n\n")
+            log.info("-- Chat session completed, starting a new one. --")
         else:
-            print("App: Invalid TOTP code")
+            log.warning("App: Invalid TOTP code")
     else:
-        print("App: Client registration failed, closing app!")
+        log.warning("App: Client registration failed, closing app!")
